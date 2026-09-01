@@ -1426,7 +1426,8 @@ describe('SQLite schema, cancellation, and real persistence integration', () => 
     foreign.close()
     const unhandled: unknown[] = []
     const onUnhandled = (reason: unknown) => { unhandled.push(reason) }
-    process.on('unhandledRejection', onUnhandled)
+    // Bypass a global `Process.on` declaration merge that shadows Node's own overload list.
+    ;(globalThis as any).process.on('unhandledRejection', onUnhandled)
     try {
       const ctx = new Context()
       await ctx.plugin(SessionStore)
@@ -1437,7 +1438,7 @@ describe('SQLite schema, cancellation, and real persistence integration', () => 
       expect(unhandled).toEqual([])
       expect(ctx.sessionQuery).toBeUndefined()
     } finally {
-      process.off('unhandledRejection', onUnhandled)
+      ;(globalThis as any).process.off('unhandledRejection', onUnhandled)
     }
   })
 

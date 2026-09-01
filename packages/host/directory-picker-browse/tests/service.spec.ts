@@ -119,7 +119,8 @@ describe('BrowseDirectoryPicker', () => {
     // the operation's late rejection is swallowed, never unhandled.
     const rejections: unknown[] = []
     const onUnhandled = (reason: unknown): void => { rejections.push(reason) }
-    process.on('unhandledRejection', onUnhandled)
+    // Bypass a global `Process.on` declaration merge that shadows Node's own overload list.
+    ;(globalThis as any).process.on('unhandledRejection', onUnhandled)
     try {
       let rejectLate!: (reason: unknown) => void
       const pending = new Promise<never>((_resolve, reject) => { rejectLate = reject })
@@ -132,7 +133,7 @@ describe('BrowseDirectoryPicker', () => {
       await new Promise(resolve => setTimeout(resolve, 10))
       expect(rejections).toEqual([])
     } finally {
-      process.off('unhandledRejection', onUnhandled)
+      ;(globalThis as any).process.off('unhandledRejection', onUnhandled)
     }
   })
 

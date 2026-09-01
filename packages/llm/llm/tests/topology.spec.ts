@@ -60,7 +60,8 @@ describe('llm/adapters-updated', () => {
     const ctx = await setup()
     const warn = vi.spyOn(ctx.logger, 'warn').mockImplementation(() => undefined)
     const unhandled = vi.fn()
-    process.on('unhandledRejection', unhandled)
+    // Bypass a global `Process.on` declaration merge that shadows Node's own overload list.
+    ;(globalThis as any).process.on('unhandledRejection', unhandled)
     try {
       // Typed as returning unknown so the listener is not a Promise-returning
       // function type: the point is exactly that an async one may slip in.
@@ -72,7 +73,7 @@ describe('llm/adapters-updated', () => {
       expect(unhandled).not.toHaveBeenCalled()
       expect(warn).toHaveBeenCalledWith('llm: an llm/adapters-updated listener failed')
     } finally {
-      process.off('unhandledRejection', unhandled)
+      ;(globalThis as any).process.off('unhandledRejection', unhandled)
     }
   })
 

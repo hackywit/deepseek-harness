@@ -111,18 +111,20 @@ describe('LocalSubprocessRuntime', () => {
   })
 
   it('places the host-exit finalizer before listeners that predate the service', async () => {
-    const baseline = new Set(process.listeners('exit'))
+    // Bypass a global `Process.on` declaration merge that shadows Node's own overload list.
+    const nodeProcess = (globalThis as any).process as { on(e: string, l: any): void; off(e: string, l: any): void; listeners(e: string): any[] }
+    const baseline = new Set(nodeProcess.listeners('exit'))
     const prior = vi.fn()
-    process.on('exit', prior)
+    nodeProcess.on('exit', prior)
     const ctx = new Context()
     const fiber = await ctx.plugin(LocalSubprocessRuntime)
     try {
-      const listeners = process.listeners('exit')
+      const listeners = nodeProcess.listeners('exit')
       const finalizer = listeners.find(candidate => !baseline.has(candidate) && candidate !== prior)
       expect(finalizer).toBeTypeOf('function')
       expect(listeners.indexOf(finalizer!)).toBeLessThan(listeners.indexOf(prior))
     } finally {
-      process.off('exit', prior)
+      nodeProcess.off('exit', prior)
       await fiber.dispose()
     }
   })
